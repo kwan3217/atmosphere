@@ -115,7 +115,7 @@ class SimpleEarthAtmosphere(SimpleAtmosphere):
             return 288.14-0.00694*alt
         elif alt<25000:
             return 216.64
-        elif alt<self.Zlimit:
+        elif alt<=self.Zlimit:
             return 141.89+0.00299*alt
         else:
             return 0.0
@@ -126,7 +126,7 @@ class SimpleEarthAtmosphere(SimpleAtmosphere):
             return 101290*(self.temp(alt)/288.08)**5.256
         elif alt<25000:
             return 22650*np.exp(1.73-0.000157*alt)
-        elif alt<self.Zlimit:
+        elif alt<=self.Zlimit:
             return 2488*(self.temp(alt)/216.6)**-11.388
         else:
             return 0.0
@@ -135,8 +135,7 @@ class SimpleEarthAtmosphere(SimpleAtmosphere):
 def main():
     print(SimpleEarthAtmosphere().calc_props(0.0))
     print(SimpleEarthAtmosphere().calc_props(12000.0))
-    print(SimpleEarthAtmosphere().calc_props(120000.0))
-    print(SimpleEarthAtmosphere().calc_props(1200000.0))
+    print(SimpleEarthAtmosphere().calc_props(149999.0))
 
 
 if __name__=='__main__':
