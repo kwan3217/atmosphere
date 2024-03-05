@@ -10,13 +10,13 @@ from numpy import log as ln
 
 @dataclass
 class AirProperties:
-    Altitude:float      #Geometric Altitude above reference surface, m
-    Temperature:float   #units:K
-    Pressure:float      #units:Pa
-    Density:float       #units:kg/m**3
-    VSound:float        #units:m/s
-    MolWt:float         #units:kg/kmol (=g/mol)
-    Geopotential:float  #units:geopotenital meters (m'). In a uniform gravity field,
+    Altitude:float      # Geometric Altitude above reference surface, m
+    Temperature:float   # units:K
+    Pressure:float      # units:Pa
+    Density:float       # units:kg/m**3
+    VSound:float        # units:m/s
+    MolWt:float         # units:kg/kmol (=g/mol)
+    Geopotential:float  # units:geopotenital meters (m'). In a uniform gravity field,
                         # an object which is pushed up gains gravitational potential
                         # energy as mgh. Since real gravity fields are not uniform,
                         # but much more closely approximated as inverse square, raising
@@ -25,12 +25,14 @@ class AirProperties:
                         # geopotential altitude h will have as much potential energy
                         # as it would have if it was raised h meters in a uniform gravity
                         # field. This will in general be different from the geometric
-                        # altitude z.
-    MolTemp:float       #units:K'. This is the temperature scaled by the molecular weight
-    Gravity:float       #units:m/s**2
-    PScaleHeight:float  #units:m
-    rhoScaleHeight:float  #units:m
-    NumberDensity:float #units:1/m**3
+                        # altitude z -- an object will have to be raised *more* geometric
+                        # height to get an equivalent amount of geopotential height, since
+                        # there is less gravity and therefore less potential energy at the top.
+    MolTemp:float       # units:K'. This is the temperature scaled by the molecular weight
+    Gravity:float       # units:m/s**2
+    PScaleHeight:float  # units:m
+    rhoScaleHeight:float# units:m
+    NumberDensity:float # units:1/m**3
     MolVel:float        #units:m/s
     MeanFreePath:float  #units:m
     ColFreq:float       #units:Hz
