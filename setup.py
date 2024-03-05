@@ -15,7 +15,7 @@ setup(
     author_email='kwan3217@gmail.com',
     license='BSD 2-clause',
     packages=['atmosphere'],
-    python_requires='>=3.11, <4',
+    python_requires='>=3.10, <4',
     install_requires=[
                       'numpy',
                      ],
