@@ -43,12 +43,43 @@ class AirProperties:
     GasName:list[str]
 
 
-class SimpleAtmosphere:
+def barometric_lapse(h:float,*,P0:float,T0:float,h0:float,L:float,g0:float,M:float)->float:
+    """
+    Calculate the pressure at a given altitude in a layer of atmosphere with a linear temperature lapse.
+
+    :param h: Altitude at which to calculate the pressure
+    :param h0: Reference altitude, altitude of the base of the layer with linear temperature lapse
+    :param P0: Pressure at the reference altitude
+    :param T0: Temperature at the reference altitude
+    :param L: Vertical temperature lapse rate
+    :param g0: acceleration of gravity
+    :param M: Molecular mass, kg/kmol
+    :return:
+    """
+    if L==0:
+        P=P0*np.exp(-g0*M*(h-h0)/(SimpleAtmosphere.Rs*T0))
+    else:
+        P=P0*((T0+(h-h0)*L)/T0)**(-g0*M/(SimpleAtmosphere.Rs*L))
+    return P
+
+
+class Atmosphere:
+    def calc_props(self,Z:float):
+        raise NotImplementedError
+
+
+class SimpleAtmosphere(Atmosphere):
     k=1.380_649e-23 #Boltzmann constant, 2019 value (exact), J/K
     Na=6.022_140_76e26 #Avogadro's number, 2019 value (exact), 1/kmol
     Rs=k*Na #Ideal gas constant,J/(K*kmol)
     def __init__(self):
         pass
+    def temp(self,alt:float)->float:
+        raise NotImplementedError
+    def mol_weight(self,alt:float)->float:
+        raise NotImplementedError
+    def pressure(self,alt:float)->float:
+        raise NotImplementedError
     def viscosity(self,alt:float):
         """
         Calculate dynamic viscosity \mu at given geometric altitude
