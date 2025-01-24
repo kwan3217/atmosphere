@@ -1,6 +1,9 @@
 """
 Base class for atmosphere models. These take a geometric height above a reference surface
 and return the atmosphere properties at that height.
+
+All of these functions and classes are documented to use np.ndarray, but will accept scalars
+(float or int) as well and will return float results in these cases.
 """
 from dataclasses import dataclass
 
@@ -10,13 +13,13 @@ from numpy import log as ln
 
 @dataclass
 class AirProperties:
-    Altitude:float      # Geometric Altitude above reference surface, m
-    Temperature:float   # units:K
-    Pressure:float      # units:Pa
-    Density:float       # units:kg/m**3
-    VSound:float        # units:m/s
-    MolWt:float         # units:kg/kmol (=g/mol)
-    Geopotential:float  # units:geopotenital meters (m'). In a uniform gravity field,
+    Altitude:np.ndarray      # Geometric Altitude above reference surface, m
+    Temperature:np.ndarray   # units:K
+    Pressure:np.ndarray      # units:Pa
+    Density:np.ndarray       # units:kg/m**3
+    VSound:np.ndarray        # units:m/s
+    MolWt:np.ndarray         # units:kg/kmol (=g/mol)
+    Geopotential:np.ndarray  # units:geopotenital meters (m'). In a uniform gravity field,
                         # an object which is pushed up gains gravitational potential
                         # energy as mgh. Since real gravity fields are not uniform,
                         # but much more closely approximated as inverse square, raising
@@ -28,24 +31,24 @@ class AirProperties:
                         # altitude z -- an object will have to be raised *more* geometric
                         # height to get an equivalent amount of geopotential height, since
                         # there is less gravity and therefore less potential energy at the top.
-    MolTemp:float       # units:K'. This is the temperature scaled by the molecular weight
-    Gravity:float       # units:m/s**2
-    PScaleHeight:float  # units:m
-    rhoScaleHeight:float# units:m
-    NumberDensity:float # units:1/m**3
-    MolVel:float        #units:m/s
-    MeanFreePath:float  #units:m
-    ColFreq:float       #units:Hz
-    Viscosity:float     #units:Ns/m**2
-    KinViscosity:float  #units:m**2/s
-    ThermalCond:float   #units:W/(m*K)
-    SpecHeatRatio:float #unitless
-    GasNumberDensity:list[float]
-    GasMolWeight:list[float]
+    MolTemp:np.ndarray       # units:K'. This is the temperature scaled by the molecular weight
+    Gravity:np.ndarray       # units:m/s**2
+    PScaleHeight:np.ndarray  # units:m
+    rhoScaleHeight:np.ndarray# units:m
+    NumberDensity:np.ndarray # units:1/m**3
+    MolVel:np.ndarray        #units:m/s
+    MeanFreePath:np.ndarray  #units:m
+    ColFreq:np.ndarray       #units:Hz
+    Viscosity:np.ndarray     #units:Ns/m**2
+    KinViscosity:np.ndarray  #units:m**2/s
+    ThermalCond:np.ndarray   #units:W/(m*K)
+    SpecHeatRatio:np.ndarray #unitless
+    GasNumberDensity:list[np.ndarray]
+    GasMolWeight:list[np.ndarray]
     GasName:list[str]
 
 
-def barometric_lapse(h:float,*,P0:float,T0:float,h0:float,L:float,g0:float,M:float)->float:
+def barometric_lapse(h:np.ndarray,*,P0:np.ndarray,T0:np.ndarray,h0:np.ndarray,L:np.ndarray,g0:np.ndarray,M:np.ndarray)->np.ndarray:
     """
     Calculate the pressure at a given altitude in a layer of atmosphere with a linear temperature lapse.
 
@@ -66,7 +69,7 @@ def barometric_lapse(h:float,*,P0:float,T0:float,h0:float,L:float,g0:float,M:flo
 
 
 class Atmosphere:
-    def calc_props(self,Z:float):
+    def calc_props(self,Z:np.ndarray):
         raise NotImplementedError
 
 
@@ -76,13 +79,13 @@ class SimpleAtmosphere(Atmosphere):
     Rs=k*Na #Ideal gas constant,J/(K*kmol)
     def __init__(self):
         pass
-    def temp(self,alt:float)->float:
+    def temp(self,alt:np.ndarray)->np.ndarray:
         raise NotImplementedError
-    def mol_weight(self,alt:float)->float:
+    def mol_weight(self,alt:np.ndarray)->np.ndarray:
         raise NotImplementedError
-    def pressure(self,alt:float)->float:
+    def pressure(self,alt:np.ndarray)->np.ndarray:
         raise NotImplementedError
-    def viscosity(self,alt:float):
+    def viscosity(self,alt:np.ndarray):
         """
         Calculate dynamic viscosity \mu at given geometric altitude
         :param alt:
@@ -91,45 +94,46 @@ class SimpleAtmosphere(Atmosphere):
         """
         T=self.temp(alt)
         return (self.beta*T**1.5)/(T+self.S)
-    def density(self,alt:float):
+    def density(self,alt:np.ndarray):
         """
 
         :param alt:
         :return:
         """
         T=self.temp(alt)
-        if T==0.0:
-            return 0.0
-        return self.mol_weight(alt)*self.pressure(alt)/(self.Rs*T)
-    def vsound(self,alt:float):
+        return np.where(T==0.0,
+                        0.0,
+                        self.mol_weight(alt)*self.pressure(alt)/(self.Rs*T))
+    def vsound(self,alt:np.ndarray):
         M=self.mol_weight(alt)
-        if M==0.0:
-            return 0.0
-        return np.sqrt(self.gamma*self.Rs*self.temp(alt)/M)
-    def mean_free_path(self,alt:float):
-        return 1.0 / (np.sqrt(2.0) * np.pi * self.Na * self.sigma**2) * (self.Rs / self.mol_weight(0) * self.mol_weight(alt)
-            * self.mol_temp(alt) / self.pressure(alt))
-    def mol_temp(self,alt:float):
+        return np.where(M==0.0,0.0,np.sqrt(self.gamma*self.Rs*self.temp(alt)/M))
+    def mean_free_path(self,alt:np.ndarray):
+        P=self.pressure(alt)
+        return np.where(P==0,
+            float('inf'),
+            1.0 / (np.sqrt(2.0) * np.pi * self.Na * self.sigma**2) * (self.Rs / self.mol_weight(0) * self.mol_weight(alt)
+            * self.mol_temp(alt) / self.pressure(alt)))
+    def mol_temp(self,alt:np.ndarray):
         return self.temp(alt)*self.mol_weight(alt)/self.mol_weight(0)
-    def pres_scale_height(self,alt:float):
-        return self.Rs * self.temp(alt) / (self.mol_weight(alt) * self.g0)
-    def dens_scale_height(self,alt:float):
+    def pres_scale_height(self,alt:np.ndarray):
+        return np.where(self.mol_weight(alt)>0,self.Rs * self.temp(alt) / (self.mol_weight(alt) * self.g0),np.inf)
+    def dens_scale_height(self,alt:np.ndarray):
         Hp=self.pres_scale_height(alt)
         dz=1.0
         dlnT=ln(self.temp(alt+dz))-ln(self.temp(alt))
         dlnTdz=dlnT/dz
         Hrho=Hp/(1+Hp*dlnTdz)
-        return Hrho
-    def gravity(self,Z:float):
+        return np.where(np.isfinite(Hp),Hrho,np.inf)
+    def gravity(self,Z:np.ndarray):
         return self.g0*(self.r0/(self.r0+Z))**2
-    def geopotential(self,Z:float):
+    def geopotential(self,Z:np.ndarray):
         return self.r0*Z/(self.r0+Z)
-    def calc_props(self,Z:float):
+    def calc_props(self,Z:np.ndarray):
         return AirProperties(Altitude=Z,Temperature=self.temp(Z),Pressure=self.pressure(Z),Density=self.density(Z),
                              VSound=self.vsound(Z),MolWt=self.mol_weight(Z),Geopotential=self.geopotential(Z),
                              MolTemp=self.mol_temp(Z),Gravity=self.gravity(Z),PScaleHeight=self.pres_scale_height(Z),
                              rhoScaleHeight=self.dens_scale_height(Z),
-                             NumberDensity=self.density(Z)/self.mol_weight(Z)*self.Na,MolVel=None,
+                             NumberDensity=np.where(self.density(Z)>0,self.density(Z)/self.mol_weight(Z)*self.Na,0),MolVel=None,
                              MeanFreePath=self.mean_free_path(Z),ColFreq=None,Viscosity=self.viscosity(Z),
                              KinViscosity=None,ThermalCond=None,SpecHeatRatio=self.gamma,GasNumberDensity=[],
                              GasMolWeight=[],GasName=[])
@@ -143,33 +147,27 @@ class SimpleEarthAtmosphere(SimpleAtmosphere):
     g0=9.80665 #Acceleration of gravity at reference surface, m/s**2
     r0=6_356_766.0 #Reference radius of Earth, from USSA1976.
     Zlimit=150_000.0 #Limit of atmosphere model, m
-    def temp(self,alt:float):
-        if alt<11000:
-            return 288.14-0.00694*alt
-        elif alt<25000:
-            return 216.64
-        elif alt<=self.Zlimit:
-            return 141.89+0.00299*alt
-        else:
-            return 0.0
-    def mol_weight(self,alt:float):
-        return 28.9644
-    def pressure(self,alt:float):
-        if alt<11000:
-            return 101290*(self.temp(alt)/288.08)**5.256
-        elif alt<25000:
-            return 22650*np.exp(1.73-0.000157*alt)
-        elif alt<=self.Zlimit:
-            return 2488*(self.temp(alt)/216.6)**-11.388
-        else:
-            return 0.0
+    def temp(self,alt:np.ndarray):
+        return np.where(
+            alt<11000,
+                288.14 - 0.00694 * alt,
+            np.where(alt<25000,
+                216.64,
+            np.where(alt<=self.Zlimit,
+                141.89 + 0.00299 * alt,
+                0.0
+        )))
+    def mol_weight(self,alt:np.ndarray):
+        return np.where(alt<=self.Zlimit,28.9644,0)
+    def pressure(self,alt:np.ndarray):
+        return np.where(
+            alt<11000,
+                101290*(self.temp(alt)/288.08)**5.256,
+            np.where(alt<25000,
+                22650*np.exp(1.73-0.000157*alt),
+            np.where(alt<=self.Zlimit,
+                2488*(self.temp(alt)/216.6)**-11.388,
+                0.0
+        )))
 
 
-def main():
-    print(SimpleEarthAtmosphere().calc_props(0.0))
-    print(SimpleEarthAtmosphere().calc_props(12000.0))
-    print(SimpleEarthAtmosphere().calc_props(149999.0))
-
-
-if __name__=='__main__':
-    main()
